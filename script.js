@@ -1,238 +1,315 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Teen Mental Health Dashboard</title>
+let rawData = [];
 
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
+let ageMap = {};
+let platformMap = {};
+let genderMap = {};
 
-<body>
+let currentGender = "all";
+let selectedAges = [];
 
-<div class="layout">
+let ageChart, platformChart, genderChart;
 
-  <!-- SIDEBAR -->
-<aside class="sidebar">
-  <h2>📌 Navigation</h2>
+// =====================
+// LOAD DATA
+// =====================
+fetch("data.csv")
+  .then(res => res.text())
+  .then(text => {
 
-<button onclick="showPanel('about', event)">📘 About Dataset</button>
-<button onclick="showPanel('overview', event)">📊 Overview</button>
-<button onclick="showPanel('findings', event)">🔍 Findings</button>
-<button onclick="showPanel('source', event)">📦 Source</button>
-<button onclick="showPanel('author', event)">👤 Author</button>
+    const rows = text.trim().split("\n").slice(1);
 
-</aside>
+    rawData = rows.map(r => {
+      const c = r.split(",");
 
-<div class="main">
+      return {
+        age: parseInt(c[0]),
+        gender: c[1],
+        platform: c[3],
+        addiction: parseFloat(c[11])
+      };
+    });
 
+    // restore saved state
+    currentGender = localStorage.getItem("genderFilter") || "all";
+    selectedAges = JSON.parse(localStorage.getItem("selectedAges") || "[]");
 
-  <!-- PANEL: ABOUT -->
-  <section id="about" class="panel-page">
-    <div class="topbar">
-      <h1>📊 Teen Mental Health Dashboard</h1>
-      <p>Who is most affected by social media addiction?</p>
-    </div>
-    <div class="topbar">
-      <h2>📘 About the Dataset</h2>
-      <h2>Dataset Overview</h2>
-      <p>
-      This dataset studies how social media use affects the mental health of teenagers. It includes daily habits like social media hours, sleep, stress, anxiety, and physical activity.
-      <br><br>
-      The goal is to understand if high social media use is linked with problems like stress, anxiety, and depression. The data helps in analyzing behavior and building machine learning models to predict mental health risk.
-      <br><br>
-      Overall, this dataset is useful for basic research and for creating models that can help in early detection of mental health issues in teenagers.
-      </p>
-      <br><br>
-      <h2>Dataset Tags</h2>
-      <p>
-        mental health, teen health, social media impact, depression prediction, anxiety analysis, machine learning, dataset, behavioral data, health analytics, AI in healthcare
-      </p>
-    </div>
-  </section>
+    applyAllFilters();
+  });
 
-  <!-- PANEL: OVERVIEW -->
-  <section id="overview" class="panel-page">
+// =====================
+// AVERAGE FUNCTION
+// =====================
+function avg(arr) {
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
 
-  <div class="controls">
-    <button data-gender="all" onclick="updateDashboard('all', this)">All</button>
-    <button data-gender="male" onclick="updateDashboard('male', this)">Male</button>
-    <button data-gender="female" onclick="updateDashboard('female', this)">Female</button>
-  </div>
+// =====================
+// MASTER FILTER ENGINE
+// =====================
+function applyAllFilters() {
 
-    <section class="cards">
+  let filtered = rawData;
 
-      <div class="card">
-        <h3>Main Metric</h3>
-        <p>Addiction Level</p>
-      </div>
+  // gender filter
+  if (currentGender !== "all") {
+    filtered = filtered.filter(d => d.gender === currentGender);
+  }
 
-      <div class="card">
-        <h3>Focus</h3>
-        <p>Age • Gender • Platform</p>
-      </div>
+  // multi-age filter
+  if (selectedAges.length > 0) {
+    filtered = filtered.filter(d => selectedAges.includes(d.age));
+  }
 
-      <div class="card">
-        <h3>Goal</h3>
-        <p>Find most affected group</p>
-      </div>
-    </section>
+  buildCharts(filtered);
+  updateKPIs(filtered);
+  updateAgeCards(filtered);
+}
 
-      <div class="kpis">
+// =====================
+// UPDATE BUTTON FILTER (GENDER)
+// =====================
+function updateDashboard(genderFilter, btn) {
 
-        <div class="kpi-card">
-          <h3>Total Respondents</h3>
-          <p id="totalCount">0</p>
-        </div>
+  currentGender = genderFilter;
+  localStorage.setItem("genderFilter", genderFilter);
 
-        <div class="kpi-card">
-          <h3>Avg Addiction</h3>
-          <p id="avgAddiction">0</p>
-        </div>
+  applyAllFilters();
 
-      </div>
+  document.querySelectorAll(".controls button").forEach(b => {
+    b.classList.remove("active");
+  });
 
-<div class="age-kpis">
+  btn.classList.add("active");
+}
 
-  <div class="kpi-card" onclick="filterByAge(13, this)">
-    <h3>Age 13</h3>
-    <p id="age13">0</p>
-  </div>
+// =====================
+// BUILD CHARTS
+// =====================
+function buildCharts(data) {
 
-  <div class="kpi-card" onclick="filterByAge(14, this)">
-    <h3>Age 14</h3>
-    <p id="age14">0</p>
-  </div>
+  ageMap = {};
+  platformMap = {};
+  genderMap = {};
 
-  <div class="kpi-card" onclick="filterByAge(15, this)">
-    <h3>Age 15</h3>
-    <p id="age15">0</p>
-  </div>
+  data.forEach(d => {
+    if (isNaN(d.addiction)) return;
 
-  <div class="kpi-card" onclick="filterByAge(16, this)">
-    <h3>Age 16</h3>
-    <p id="age16">0</p>
-  </div>
+    if (!ageMap[d.age]) ageMap[d.age] = [];
+    ageMap[d.age].push(d.addiction);
 
-  <div class="kpi-card" onclick="filterByAge(17, this)">
-    <h3>Age 17</h3>
-    <p id="age17">0</p>
-  </div>
+    if (!platformMap[d.platform]) platformMap[d.platform] = [];
+    platformMap[d.platform].push(d.addiction);
 
-  <div class="kpi-card" onclick="filterByAge(18, this)">
-    <h3>Age 18</h3>
-    <p id="age18">0</p>
-  </div>
+    if (!genderMap[d.gender]) genderMap[d.gender] = [];
+    genderMap[d.gender].push(d.addiction);
+  });
 
-  <div class="kpi-card" onclick="filterByAge(19, this)">
-    <h3>Age 19</h3>
-    <p id="age19">0</p>
-  </div>
+  const ageLabels = Object.keys(ageMap);
+  const ageValues = Object.values(ageMap).map(avg);
 
-</div>
+  const platformLabels = Object.keys(platformMap);
+  const platformValues = Object.values(platformMap).map(avg);
 
-    <div class="grid">
+  const genderLabels = Object.keys(genderMap);
+  const genderValues = Object.values(genderMap).map(avg);
 
-      <div class="panel">
-        <h2>📊 Addiction by Age</h2>
-        <canvas id="ageChart"></canvas>
-      </div>
+  if (ageChart) ageChart.destroy();
+  if (platformChart) platformChart.destroy();
+  if (genderChart) genderChart.destroy();
 
-      <div class="panel">
-        <h2>📊 Addiction by Platform</h2>
-        <canvas id="platformChart"></canvas>
-      </div>
+  ageChart = new Chart(document.getElementById("ageChart"), {
+    type: "bar",
+    data: {
+      labels: ageLabels,
+      datasets: [{
+        label: "Average Addiction",
+        data: ageValues,
+        backgroundColor: "red"
+      }]
+    }
+  });
 
-      <div class="panel">
-        <h2>📊 Addiction by Gender</h2>
-        <canvas id="genderChart"></canvas>
-      </div>
+  platformChart = new Chart(document.getElementById("platformChart"), {
+    type: "bar",
+    data: {
+      labels: platformLabels,
+      datasets: [{
+        label: "Average Addiction",
+        data: platformValues,
+        backgroundColor: "blue"
+      }]
+    }
+  });
 
-    </div>
+  genderChart = new Chart(document.getElementById("genderChart"), {
+    type: "bar",
+    data: {
+      labels: genderLabels,
+      datasets: [{
+        label: "Average Addiction",
+        data: genderValues,
+        backgroundColor: "green"
+      }]
+    }
+  });
+}
 
-  </section>
+// =====================
+// KPI UPDATE
+// =====================
+function updateKPIs(data) {
 
-<!-- PANEL: FINDINGS -->
-<section id="findings" class="panel-page">
+  const total = data.length;
 
-  <div class="topbar">
-    <h2>📊 Findings & Insights</h2>
+  const avgVal =
+    data.reduce((sum, d) => sum + (d.addiction || 0), 0) / total;
 
-    <p>
-      Based on the dashboard analysis of teen social media addiction, the dataset shows relatively consistent patterns across age, gender, and platform usage with no strong outliers.
-    </p>
-  </div>
+  document.getElementById("totalCount").innerText = total;
+  document.getElementById("avgAddiction").innerText =
+    isNaN(avgVal) ? 0 : avgVal.toFixed(2);
+}
 
-  <div style="font-size: 20px;" class="topbar">
+// =====================
+// AGE CARDS UPDATE
+// =====================
+function updateAgeCards(data) {
 
-    <h3>📌 Key Discoveries</h3>
-    <ul>
+  const ages = [13, 14, 15, 16, 17, 18, 19];
 
-      <li>
-        <strong>Age Distribution Insight:</strong>
-        Addiction levels are relatively uniform across ages 13–19, indicating weak correlation between age and addiction severity within this dataset.
-      </li>
+  const counts = {};
+  ages.forEach(a => counts[a] = 0);
 
-      <li>
-        <strong>Sample Concentration:</strong>
-        Age 13 contains the highest number of respondents, which may slightly influence overall distribution but does not significantly affect addiction trends.
-      </li>
+  data.forEach(d => {
+    if (counts[d.age] !== undefined) {
+      counts[d.age]++;
+    }
+  });
 
-      <li>
-        <strong>Platform Comparison:</strong>
-        Instagram, TikTok, and combined usage (“Both”) show comparable addiction levels, suggesting that platform type alone is not a strong predictor of addiction severity.
-      </li>
+  ages.forEach(age => {
+    const el = document.getElementById("age" + age);
+    if (el) el.innerText = counts[age];
+  });
+}
 
-      <li>
-        <strong>Gender Analysis:</strong>
-        Male and female users show nearly identical average addiction scores, indicating no statistically meaningful difference between genders in this dataset.
-      </li>
+// =====================
+// AGE FILTER (MULTI-SELECT TOGGLE)
+// =====================
+function filterByAge(age, element) {
 
-      <li>
-        <strong>Behavioral Trend:</strong>
-        Addiction levels remain moderately high across all segments, indicating widespread and consistent engagement rather than isolated high-risk groups.
-      </li>
+  age = parseInt(age);
 
-    </ul>
+  if (selectedAges.includes(age)) {
+    selectedAges = selectedAges.filter(a => a !== age);
+  } else {
+    selectedAges.push(age);
+  }
 
-  </div>
+  localStorage.setItem("selectedAges", JSON.stringify(selectedAges));
 
-  <div style="font-size: 20px;" class="topbar">
+  document.querySelectorAll(".age-kpis .kpi-card").forEach(card => {
+    card.classList.remove("active");
+  });
 
-    <h3>📈 Overall Insight</h3>
+  selectedAges.forEach(a => {
+    const el = document.querySelector(`.kpi-card[onclick*="${a}"]`);
+    if (el) el.classList.add("active");
+  });
 
-    <p>
-      The analysis suggests that social media addiction in this dataset is not driven by a single demographic factor.
-      Instead, the results indicate a relatively uniform behavioral pattern across age, gender, and platform categories.
-    </p>
+  applyAllFilters();
+}
 
-    <p>
-      This implies that usage behavior (such as time spent and engagement frequency) may be more influential than demographic attributes in explaining addiction levels.
-    </p>
+// =====================
+// PANEL SWITCH
+// =====================
+function showPanel(id, event) {
 
-  </div>
+  localStorage.setItem("activePanel", id);
 
-</section>
+  document.querySelectorAll(".panel-page").forEach(p => {
+    p.classList.remove("active");
+  });
 
-  <!-- PANEL: SOURCE -->
-  <section id="source" class="panel-page">
-    <div class="topbar">
-    <h2>📦 Source</h2>
-    <p>Kaggle: <a href="https://www.kaggle.com/datasets/algozee/teenager-menthal-healy/data"> Social Media Impact on Teen Mental Health</a></p>
-    </div>
-  </section>
+  document.getElementById(id).classList.add("active");
 
-  <!-- PANEL: AUTHOR -->
-  <section id="author" class="panel-page">
-    <div class="topbar">
-    <h2>👤 Collaborators</h2>
-    <p>Author: <a href="https://www.kaggle.com/algozee">Muhammad Shahzad</a></p>
-    </div>
-  </section>
+  document.querySelectorAll(".sidebar button").forEach(btn => {
+    btn.classList.remove("active");
+  });
 
-</div>
-</div>
+  event.currentTarget.classList.add("active");
 
-<script src="script.js"></script>
-</body>
-</html>
+  // reset only when overview is opened
+  if (id === "overview") {
+
+    currentGender = "all";
+    selectedAges = [];
+
+    localStorage.setItem("genderFilter", "all");
+    localStorage.setItem("selectedAges", "[]");
+
+    document.querySelectorAll(".controls button").forEach(b => {
+      b.classList.remove("active");
+    });
+
+    const allBtn = document.querySelector(".controls button");
+    if (allBtn) allBtn.classList.add("active");
+
+    document.querySelectorAll(".age-kpis .kpi-card").forEach(c => {
+      c.classList.remove("active");
+    });
+
+    applyAllFilters();
+  }
+}
+
+// =====================
+// RESTORE ON LOAD (FIXED)
+// =====================
+window.addEventListener("load", () => {
+
+  const savedPanel = localStorage.getItem("activePanel") || "about";
+  const savedGender = localStorage.getItem("genderFilter") || "all";
+  const savedAges = JSON.parse(localStorage.getItem("selectedAges") || "[]");
+
+  currentGender = savedGender;
+  selectedAges = savedAges;
+
+  // show correct panel
+  document.querySelectorAll(".panel-page").forEach(p => {
+    p.classList.remove("active");
+  });
+
+  const panel = document.getElementById(savedPanel);
+  if (panel) panel.classList.add("active");
+
+  // sidebar active
+  document.querySelectorAll(".sidebar button").forEach(btn => {
+    btn.classList.remove("active");
+
+    if (btn.getAttribute("onclick")?.includes(savedPanel)) {
+      btn.classList.add("active");
+    }
+  });
+
+  // restore gender button UI
+  document.querySelectorAll(".controls button").forEach(b => {
+    b.classList.remove("active");
+
+    if (b.textContent.toLowerCase().includes(savedGender)) {
+      b.classList.add("active");
+    }
+  });
+
+  // restore age UI
+  document.querySelectorAll(".age-kpis .kpi-card").forEach(c => {
+    c.classList.remove("active");
+  });
+
+  selectedAges.forEach(age => {
+    const el = document.querySelector(`.kpi-card[onclick*="${age}"]`);
+    if (el) el.classList.add("active");
+  });
+
+  // apply everything
+  applyAllFilters();
+});
+
