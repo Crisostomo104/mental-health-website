@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teen Mental Health Dashboard</title>
+
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+<aside class="sidebar">
+  <h2>📌 Navigation</h2>
+
+<button onclick="showPanel('about', event)">📘 About Dataset</button>
+<button onclick="showPanel('overview', event)">📊 Overview</button>
+<button onclick="showPanel('findings', event)">🔍 Findings</button>
+<button onclick="showPanel('source', event)">📦 Source</button>
+<button onclick="showPanel('author', event)">👤 Author</button>
+
+</aside>
+
+<div class="main">
+
+
+  <!-- PANEL: ABOUT -->
+  <section id="about" class="panel-page">
+    <div class="topbar">
+      <h1>📊 Teen Mental Health Dashboard</h1>
+      <p>Who is most affected by social media addiction?</p>
+    </div>
+    <div class="topbar">
+      <h2>📘 About the Dataset</h2>
+      <h2>Dataset Overview</h2>
+      <p>
+      This dataset studies how social media use affects the mental health of teenagers. It includes daily habits like social media hours, sleep, stress, anxiety, and physical activity.
+      <br><br>
+      The goal is to understand if high social media use is linked with problems like stress, anxiety, and depression. The data helps in analyzing behavior and building machine learning models to predict mental health risk.
+      <br><br>
+      Overall, this dataset is useful for basic research and for creating models that can help in early detection of mental health issues in teenagers.
+      </p>
+      <br><br>
+      <h2>Dataset Tags</h2>
+      <p>
+        mental health, teen health, social media impact, depression prediction, anxiety analysis, machine learning, dataset, behavioral data, health analytics, AI in healthcare
+      </p>
+    </div>
+  </section>
+
+  <!-- PANEL: OVERVIEW -->
+  <section id="overview" class="panel-page">
+
+  <div class="controls">
+    <button data-gender="all" onclick="updateDashboard('all', this)">All</button>
+    <button data-gender="male" onclick="updateDashboard('male', this)">Male</button>
+    <button data-gender="female" onclick="updateDashboard('female', this)">Female</button>
+  </div>
+
+    <section class="cards">
+
+      <div class="card">
+        <h3>Main Metric</h3>
+        <p>Addiction Level</p>
+      </div>
+
+      <div class="card">
+        <h3>Focus</h3>
+        <p>Age • Gender • Platform</p>
+      </div>
+
+      <div class="card">
+        <h3>Goal</h3>
+        <p>Find most affected group</p>
+      </div>
+    </section>
+
+      <div class="kpis">
+
+        <div class="kpi-card">
+          <h3>Total Respondents</h3>
+          <p id="totalCount">0</p>
+        </div>
+
+        <div class="kpi-card">
+          <h3>Avg Addiction</h3>
+          <p id="avgAddiction">0</p>
+        </div>
+
+      </div>
+
+<div class="age-kpis">
+
+  <div class="kpi-card" onclick="filterByAge(13, this)">
+    <h3>Age 13</h3>
+    <p id="age13">0</p>
+  </div>
+
+  <div class="kpi-card" onclick="filterByAge(14, this)">
+    <h3>Age 14</h3>
+    <p id="age14">0</p>
+  </div>
+
+  <div class="kpi-card" onclick="filterByAge(15, this)">
+    <h3>Age 15</h3>
+    <p id="age15">0</p>
+  </div>
+
+  <div class="kpi-card" onclick="filterByAge(16, this)">
+    <h3>Age 16</h3>
+    <p id="age16">0</p>
+  </div>
+
+  <div class="kpi-card" onclick="filterByAge(17, this)">
+    <h3>Age 17</h3>
+    <p id="age17">0</p>
+  </div>
+
+  <div class="kpi-card" onclick="filterByAge(18, this)">
+    <h3>Age 18</h3>
+    <p id="age18">0</p>
+  </div>
+
+  <div class="kpi-card" onclick="filterByAge(19, this)">
+    <h3>Age 19</h3>
+    <p id="age19">0</p>
+  </div>
+
+</div>
+
+    <div class="grid">
+
+      <div class="panel">
+        <h2>📊 Addiction by Age</h2>
+        <canvas id="ageChart"></canvas>
+      </div>
+
+      <div class="panel">
+        <h2>📊 Addiction by Platform</h2>
+        <canvas id="platformChart"></canvas>
+      </div>
+
+      <div class="panel">
+        <h2>📊 Addiction by Gender</h2>
+        <canvas id="genderChart"></canvas>
+      </div>
+
+    </div>
+
+  </section>
+
+<!-- PANEL: FINDINGS -->
+<section id="findings" class="panel-page">
+
+  <div class="topbar">
+    <h2>📊 Findings & Insights</h2>
+
+    <p>
+      Based on the dashboard analysis of teen social media addiction, the dataset shows relatively consistent patterns across age, gender, and platform usage with no strong outliers.
+    </p>
+  </div>
+
+  <div style="font-size: 20px;" class="topbar">
+
+    <h3>📌 Key Discoveries</h3>
+    <ul>
+
+      <li>
+        <strong>Age Distribution Insight:</strong>
+        Addiction levels are relatively uniform across ages 13–19, indicating weak correlation between age and addiction severity within this dataset.
+      </li>
+
+      <li>
+        <strong>Sample Concentration:</strong>
+        Age 13 contains the highest number of respondents, which may slightly influence overall distribution but does not significantly affect addiction trends.
+      </li>
+
+      <li>
+        <strong>Platform Comparison:</strong>
+        Instagram, TikTok, and combined usage (“Both”) show comparable addiction levels, suggesting that platform type alone is not a strong predictor of addiction severity.
+      </li>
+
+      <li>
+        <strong>Gender Analysis:</strong>
+        Male and female users show nearly identical average addiction scores, indicating no statistically meaningful difference between genders in this dataset.
+      </li>
+
+      <li>
+        <strong>Behavioral Trend:</strong>
+        Addiction levels remain moderately high across all segments, indicating widespread and consistent engagement rather than isolated high-risk groups.
+      </li>
+
+    </ul>
+
+  </div>
+
+  <div style="font-size: 20px;" class="topbar">
+
+    <h3>📈 Overall Insight</h3>
+
+    <p>
+      The analysis suggests that social media addiction in this dataset is not driven by a single demographic factor.
+      Instead, the results indicate a relatively uniform behavioral pattern across age, gender, and platform categories.
+    </p>
+
+    <p>
+      This implies that usage behavior (such as time spent and engagement frequency) may be more influential than demographic attributes in explaining addiction levels.
+    </p>
+
+  </div>
+
+</section>
+
+  <!-- PANEL: SOURCE -->
+  <section id="source" class="panel-page">
+    <div class="topbar">
+    <h2>📦 Source</h2>
+    <p>Kaggle: <a href="https://www.kaggle.com/datasets/algozee/teenager-menthal-healy/data"> Social Media Impact on Teen Mental Health</a></p>
+    </div>
+  </section>
+
+  <!-- PANEL: AUTHOR -->
+  <section id="author" class="panel-page">
+    <div class="topbar">
+    <h2>👤 Collaborators</h2>
+    <p>Author: <a href="https://www.kaggle.com/algozee">Muhammad Shahzad</a></p>
+    </div>
+  </section>
+
+</div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
